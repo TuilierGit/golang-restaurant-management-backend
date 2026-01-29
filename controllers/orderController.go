@@ -20,7 +20,7 @@ var orderCollection *mongo.Collection = database.OpenCollection(database.Client,
 
 func GetOrders() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var ctxWithTimeout, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		defer cancel()
 
 		result, err := orderCollection.Find(context.TODO(), bson.M{})
@@ -37,12 +37,12 @@ func GetOrders() gin.HandlerFunc {
 
 func GetOrder() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var ctxWithTimeout, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		defer cancel()
 
 		orderID := ctx.Param("order_id")
 		var order models.Order
-		err := foodCollection.FindOne(ctxWithTimeout, bson.M{"order_id": orderID}).Decode(&order)
+		err := orderCollection.FindOne(ctxWithTimeout, bson.M{"order_id": orderID}).Decode(&order)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while fetching the order item"})
 			return
@@ -53,7 +53,7 @@ func GetOrder() gin.HandlerFunc {
 
 func CreateOrder() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var ctxWithTimeout, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		defer cancel()
 
 		var table models.Table
@@ -98,7 +98,7 @@ func CreateOrder() gin.HandlerFunc {
 
 func UpdateOrder() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var ctxWithTimeout, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		defer cancel()
 
 		var order models.Order
@@ -119,11 +119,11 @@ func UpdateOrder() gin.HandlerFunc {
 				ctx.JSON(http.StatusInternalServerError, msg)
 				return
 			}
-			updateObj = append(updateObj, bson.E{"menu", order.Table_id})
+			updateObj = append(updateObj, bson.E{Key: "menu", Value: order.Table_id})
 		}
 
 		order.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-		updateObj = append(updateObj, bson.E{"updated_at", order.Updated_at})
+		updateObj = append(updateObj, bson.E{Key: "updated_at", Value: order.Updated_at})
 
 		upsert := true
 		filter := bson.M{
@@ -134,10 +134,10 @@ func UpdateOrder() gin.HandlerFunc {
 		}
 
 		result, err := orderCollection.UpdateOne(
-			ctx,
+			ctxWithTimeout,
 			filter,
 			bson.D{
-				{"$st", updateObj},
+				{Key: "$set", Value: updateObj},
 			},
 			&opt,
 		)
@@ -153,7 +153,7 @@ func UpdateOrder() gin.HandlerFunc {
 }
 
 func OrderItemOrderCreator(order models.Order) string {
-	var ctxWithTimeout, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 
 	order.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))

@@ -24,7 +24,7 @@ var validate = validator.New()
 
 func GetFoods() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var ctxWithTimeout, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		defer cancel()
 
 		recordPerPage, err := strconv.Atoi(ctx.Query("recordPerPage"))
@@ -41,22 +41,23 @@ func GetFoods() gin.HandlerFunc {
 		startIndex, err = strconv.Atoi(ctx.Query("startIndex"))
 
 		matchStage := bson.D{
-			{"$match", bson.D{{}}},
+			{Key: "$match", Value: bson.D{{}}},
 		}
 		groupStage := bson.D{
-			{"$group", bson.D{
-				{"_id", bson.D{{"_id", "null"}}},
-				{"total_count", bson.D{{"$sum", 1}}},
-				{"data", bson.D{{"$push", "$$ROOT"}}},
+			{Key: "$group", Value: bson.D{
+				{Key: "_id", Value: bson.D{{Key: "_id", Value: "null"}}},
+				{Key: "total_count", Value: bson.D{{Key: "$sum", Value: 1}}},
+				{Key: "data", Value: bson.D{{Key: "$push", Value: "$$ROOT"}}},
 			}},
 		}
 		projectStage := bson.D{
 			{
-				"$project", bson.D{
-					{"_id", 0},
-					{"total_count", 1},
-					{"food_item", bson.D{{
-						"$slice", []interface{}{"$data", startIndex, recordPerPage}}},
+				Key: "$project", Value: bson.D{
+					{Key: "_id", Value: 0},
+					{Key: "total_count", Value: 1},
+					{Key: "food_item", Value: bson.D{{
+						Key:   "$slice",
+						Value: []interface{}{"$data", startIndex, recordPerPage}}},
 					},
 				},
 			},
@@ -81,7 +82,7 @@ func GetFoods() gin.HandlerFunc {
 
 func GetFood() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var ctxWithTimeout, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		defer cancel()
 
 		foodId := ctx.Param("food_id")
@@ -97,7 +98,7 @@ func GetFood() gin.HandlerFunc {
 
 func CreateFood() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var ctxWithTimeout, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		defer cancel()
 
 		var menu models.Menu
@@ -139,7 +140,7 @@ func CreateFood() gin.HandlerFunc {
 
 func UpdateFood() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var ctxWithTimeout, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		defer cancel()
 
 		var menu models.Menu
@@ -153,15 +154,15 @@ func UpdateFood() gin.HandlerFunc {
 
 		var updateObj primitive.D
 		if food.Name != nil {
-			updateObj = append(updateObj, bson.E{"name", food.Name})
+			updateObj = append(updateObj, bson.E{Key: "name", Value: food.Name})
 		}
 
 		if food.Price != nil {
-			updateObj = append(updateObj, bson.E{"price", food.Price})
+			updateObj = append(updateObj, bson.E{Key: "price", Value: food.Price})
 		}
 
 		if food.Food_image != nil {
-			updateObj = append(updateObj, bson.E{"food_image", food.Food_image})
+			updateObj = append(updateObj, bson.E{Key: "food_image", Value: food.Food_image})
 		}
 
 		if food.Menu_id != nil {
@@ -171,11 +172,11 @@ func UpdateFood() gin.HandlerFunc {
 				ctx.JSON(http.StatusInternalServerError, msg)
 				return
 			}
-			updateObj = append(updateObj, bson.E{"menu", food.Price})
+			updateObj = append(updateObj, bson.E{Key: "menu", Value: food.Price})
 		}
 
 		food.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-		updateObj = append(updateObj, bson.E{"updated_at", food.Updated_at})
+		updateObj = append(updateObj, bson.E{Key: "updated_at", Value: food.Updated_at})
 
 		upsert := true
 		filter := bson.M{"food_id": foodID}
@@ -188,7 +189,7 @@ func UpdateFood() gin.HandlerFunc {
 			ctxWithTimeout,
 			filter,
 			bson.D{
-				{"$set", updateObj},
+				{Key: "$set", Value: updateObj},
 			},
 			&opt,
 		)
