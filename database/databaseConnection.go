@@ -4,29 +4,37 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 func DBinstance() *mongo.Client {
 	MongoDbUrl := "mongodb://user:pass@mongodb:27017"
 	// Or "mongodb://localhost:27017"
 
-	client, err := mongo.NewClient(options.Client().ApplyURI(MongoDbUrl))
+	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+
+	opts := options.Client().ApplyURI(MongoDbUrl).SetServerAPIOptions(serverAPI)
+
+	client, err := mongo.Connect(opts)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	defer func() {
+		if err = client.Disconnect(context.TODO()); err != nil {
+			panic(err)
+		}
+	}()
 
-	err = client.Connect(ctx)
-	if err != nil {
-		log.Fatal(err)
+	var result bson.M
+	if err := client.Database("admin").RunCommand(context.TODO(), bson.D{{Key: "ping", Value: 1}}).Decode(&result); err != nil {
+		panic(err)
 	}
-	fmt.Println("connected to mongodb")
+	fmt.Println("Pinged your deployment. You successfully connected to MongoDB!")
+
 	return client
 }
 

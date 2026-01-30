@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"restaurant-management/database"
@@ -10,10 +9,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 var menuCollection *mongo.Collection = database.OpenCollection(database.Client, "menu")
@@ -69,13 +67,12 @@ func CreateMenu() gin.HandlerFunc {
 
 		menu.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		menu.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-		menu.ID = primitive.NewObjectID()
+		menu.ID = bson.NewObjectID()
 		menu.Menu_id = menu.ID.Hex()
 
 		result, insertErr := menuCollection.InsertOne(ctxWithTimeout, menu)
 		if insertErr != nil {
-			msg := fmt.Sprintf("Menu item was not created")
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Menu item was not created"})
 			return
 		}
 		ctx.JSON(http.StatusOK, result)
@@ -101,7 +98,7 @@ func UpdateMenu() gin.HandlerFunc {
 		menuID := ctx.Param("menu_id")
 		filter := bson.M{"menu_id": menuID}
 
-		var updateObj primitive.D
+		var updateObj bson.D
 		if menu.Start_Date != nil && menu.End_Date != nil {
 			if !inTimeSpan(*menu.Start_Date, *menu.End_Date, time.Now()) {
 				msg := "kindly retype the time"
@@ -123,9 +120,7 @@ func UpdateMenu() gin.HandlerFunc {
 			updateObj = append(updateObj, bson.E{Key: "updated_at", Value: menu.Updated_at})
 
 			upsert := true
-			opt := options.UpdateOptions{
-				Upsert: &upsert,
-			}
+			opt := options.UpdateOne().SetUpsert(upsert)
 
 			result, err := menuCollection.UpdateOne(
 				ctxWithTimeout,
@@ -133,7 +128,7 @@ func UpdateMenu() gin.HandlerFunc {
 				bson.D{
 					{Key: "$set", Value: updateObj},
 				},
-				&opt,
+				opt,
 			)
 
 			if err != nil {

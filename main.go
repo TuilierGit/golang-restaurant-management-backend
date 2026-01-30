@@ -1,16 +1,13 @@
 package main
 
 import (
+	"log"
 	"os"
-	"restaurant-management/database"
 	"restaurant-management/middleware"
 	"restaurant-management/routes"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 )
-
-var foodCollection *mongo.Collection = database.OpenCollection(database.Client, "food")
 
 func main() {
 	port := os.Getenv("PORT")
@@ -30,5 +27,7 @@ func main() {
 	routes.OrderItemRoutes(router)
 	routes.InvoiceRoutes(router)
 
-	router.Run(":" + port)
+	if err := router.Run(":" + port); err != nil {
+		log.Fatal("Failed to start the server: ", err)
+	}
 }

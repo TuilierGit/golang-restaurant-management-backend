@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"restaurant-management/database"
@@ -12,9 +11,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -36,7 +34,11 @@ func GetUsers() gin.HandlerFunc {
 		}
 
 		startIndex := (page - 1) * recordPerPage
-		startIndex, err = strconv.Atoi(ctx.Query("startIndex"))
+		if queryStartIndex := ctx.Query("startIndex"); queryStartIndex != "" {
+			if tempIndex, err := strconv.Atoi(queryStartIndex); err == nil {
+				startIndex = tempIndex
+			}
+		}
 
 		matchStage := bson.D{
 			{Key: "$match", Value: bson.D{}},
@@ -137,7 +139,7 @@ func Signup() gin.HandlerFunc {
 		// Create some extra details for the user object - created_at, updated_at, ID
 		user.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		user.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-		user.ID = primitive.NewObjectID()
+		user.ID = bson.NewObjectID()
 		user.User_id = user.ID.Hex()
 
 		// Generate tocken and refresh token (generate all tokens function from helper)
@@ -148,8 +150,7 @@ func Signup() gin.HandlerFunc {
 		// If all ok, then you insert this new user into the user collection
 		resultInsertion, insertErr := userCollection.InsertOne(ctxWithTimeout, user)
 		if insertErr != nil {
-			msg := fmt.Sprintf("User item was not created")
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "User item was not created"})
 			return
 		}
 
@@ -179,7 +180,7 @@ func Login() gin.HandlerFunc {
 
 		// Then you will verify the password
 		passwordIsValid, msg := VerifyPassword(*user.Password, *foundUser.Password)
-		if passwordIsValid != true {
+		if !passwordIsValid {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": msg})
 			return
 		}
@@ -210,7 +211,7 @@ func VerifyPassword(userPassword, providePassword string) (bool, string) {
 	msg := ""
 
 	if err != nil {
-		msg = fmt.Sprint("login or password is incorrect")
+		msg = "login or password is incorrect"
 		check = false
 	}
 

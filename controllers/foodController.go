@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"math"
 	"net/http"
@@ -13,10 +12,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 var foodCollection *mongo.Collection = database.OpenCollection(database.Client, "food")
@@ -38,7 +36,11 @@ func GetFoods() gin.HandlerFunc {
 		}
 
 		startIndex := (page - 1) * recordPerPage
-		startIndex, err = strconv.Atoi(ctx.Query("startIndex"))
+		if queryStartIndex := ctx.Query("startIndex"); queryStartIndex != "" {
+			if tempIndex, err := strconv.Atoi(queryStartIndex); err == nil {
+				startIndex = tempIndex
+			}
+		}
 
 		matchStage := bson.D{
 			{Key: "$match", Value: bson.D{{}}},
@@ -116,21 +118,19 @@ func CreateFood() gin.HandlerFunc {
 
 		err := menuCollection.FindOne(ctxWithTimeout, bson.M{"menu_id": food.Menu_id}).Decode(&menu)
 		if err != nil {
-			msg := fmt.Sprintf("menu was not fount")
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "menu was not fount"})
 			return
 		}
 		food.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		food.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-		food.ID = primitive.NewObjectID()
+		food.ID = bson.NewObjectID()
 		food.Food_id = food.ID.Hex()
 		var num = toFixed(*food.Price, 2)
 		food.Price = &num
 
 		result, insertErr := foodCollection.InsertOne(ctxWithTimeout, food)
 		if insertErr != nil {
-			msg := fmt.Sprint("Food item was not created")
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Food item was not created"})
 			return
 		}
 
@@ -152,7 +152,7 @@ func UpdateFood() gin.HandlerFunc {
 			return
 		}
 
-		var updateObj primitive.D
+		var updateObj bson.D
 		if food.Name != nil {
 			updateObj = append(updateObj, bson.E{Key: "name", Value: food.Name})
 		}
@@ -168,8 +168,7 @@ func UpdateFood() gin.HandlerFunc {
 		if food.Menu_id != nil {
 			err := menuCollection.FindOne(ctxWithTimeout, bson.M{"menu_id": food.Menu_id}).Decode(&menu)
 			if err != nil {
-				msg := fmt.Sprintf(("message: Menu was not found"))
-				ctx.JSON(http.StatusInternalServerError, msg)
+				ctx.JSON(http.StatusInternalServerError, "message: Menu was not found")
 				return
 			}
 			updateObj = append(updateObj, bson.E{Key: "menu", Value: food.Price})
@@ -181,9 +180,7 @@ func UpdateFood() gin.HandlerFunc {
 		upsert := true
 		filter := bson.M{"food_id": foodID}
 
-		opt := options.UpdateOptions{
-			Upsert: &upsert,
-		}
+		opt := options.UpdateOne().SetUpsert(upsert)
 
 		result, err := foodCollection.UpdateOne(
 			ctxWithTimeout,
@@ -191,12 +188,11 @@ func UpdateFood() gin.HandlerFunc {
 			bson.D{
 				{Key: "$set", Value: updateObj},
 			},
-			&opt,
+			opt,
 		)
 
 		if err != nil {
-			msg := fmt.Sprintf("food item update failed")
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "food item update failed"})
 			return
 		}
 

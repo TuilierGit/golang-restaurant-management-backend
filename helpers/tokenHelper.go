@@ -2,17 +2,15 @@ package helpers
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"restaurant-management/database"
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type SignedDetails struct {
@@ -63,7 +61,7 @@ func UpdateAllTokens(signedToken, signedRefreshToken, userID string) {
 	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 
-	var updateObj primitive.D
+	var updateObj bson.D
 
 	updateObj = append(updateObj, bson.E{Key: "token", Value: signedToken})
 	updateObj = append(updateObj, bson.E{Key: "refresh_token", Value: signedRefreshToken})
@@ -73,9 +71,7 @@ func UpdateAllTokens(signedToken, signedRefreshToken, userID string) {
 
 	upsert := true
 	filter := bson.M{"user_id": userID}
-	opt := options.UpdateOptions{
-		Upsert: &upsert,
-	}
+	opt := options.UpdateOne().SetUpsert(upsert)
 
 	_, err := userCollection.UpdateOne(
 		ctxWithTimeout,
@@ -83,13 +79,12 @@ func UpdateAllTokens(signedToken, signedRefreshToken, userID string) {
 		bson.D{
 			{Key: "$set", Value: updateObj},
 		},
-		&opt,
+		opt,
 	)
 	if err != nil {
 		log.Panic(err)
 		return
 	}
-	return
 }
 
 func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
@@ -105,15 +100,13 @@ func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
 	// Check if the token is invalid
 	claims, ok := token.Claims.(*SignedDetails)
 	if !ok {
-		msg = fmt.Sprintf("the token is invalid")
-		msg = err.Error()
+		msg = "the token is invalid:" + err.Error()
 		return
 	}
 
 	// Check if the token is expired
 	if claims.ExpiresAt < time.Now().Local().Unix() {
-		msg = fmt.Sprint("token is expired")
-		msg = err.Error()
+		msg = "token is expired" + err.Error()
 		return
 	}
 

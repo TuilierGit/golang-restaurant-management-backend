@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"restaurant-management/database"
@@ -10,10 +9,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type OrderItemPack struct {
@@ -90,7 +88,11 @@ func CreateOrderItem() gin.HandlerFunc {
 		order.Order_Date, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		orderItemsToBeInserted := []interface{}{}
 		order.Table_id = orderItemPack.Table_id
-		order_id := OrderItemOrderCreator(order)
+		order_id, err := OrderItemOrderCreator(order)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 
 		for _, orderItem := range orderItemPack.order_items {
 			orderItem.Order_id = order_id
@@ -100,7 +102,7 @@ func CreateOrderItem() gin.HandlerFunc {
 				return
 			}
 
-			orderItem.ID = primitive.NewObjectID()
+			orderItem.ID = bson.NewObjectID()
 			orderItem.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 			orderItem.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 			orderItem.Order_item_id = orderItem.ID.Hex()
@@ -126,19 +128,19 @@ func UpdateOrderItem() gin.HandlerFunc {
 		orderItemID := ctx.Param("order_item_id")
 		filter := bson.M{"order_item_id": orderItemID}
 
-		var updateObj primitive.D
+		var updateObj bson.D
 
 		if orderItem.Unit_price != nil {
 			updateObj = append(updateObj, bson.E{
 				Key:   "unit_price",
-				Value: *&orderItem.Unit_price,
+				Value: orderItem.Unit_price,
 			})
 		}
 
 		if orderItem.Quantity != nil {
 			updateObj = append(updateObj, bson.E{
 				Key:   "quantity",
-				Value: *&orderItem.Quantity,
+				Value: orderItem.Quantity,
 			})
 		}
 
@@ -155,9 +157,7 @@ func UpdateOrderItem() gin.HandlerFunc {
 		})
 
 		upsert := true
-		opt := options.UpdateOptions{
-			Upsert: &upsert,
-		}
+		opt := options.UpdateOne().SetUpsert(upsert)
 
 		result, err := orderItemCollection.UpdateOne(
 			ctxWithTimeout,
@@ -168,19 +168,18 @@ func UpdateOrderItem() gin.HandlerFunc {
 					Value: updateObj,
 				},
 			},
-			&opt,
+			opt,
 		)
 
 		if err != nil {
-			msg := fmt.Sprintf("Order item update failed")
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Order item update failed"})
 			return
 		}
 		ctx.JSON(http.StatusOK, result)
 	}
 }
 
-func ItemsByOrder(id string) (orderItems []primitive.M, err error) {
+func ItemsByOrder(id string) (orderItems []bson.M, err error) {
 	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 
@@ -300,7 +299,7 @@ func ItemsByOrder(id string) (orderItems []primitive.M, err error) {
 		panic(err)
 	}
 
-	if result.All(ctxWithTimeout, &orderItems); err != nil {
+	if err = result.All(ctxWithTimeout, &orderItems); err != nil {
 		panic(err)
 	}
 
