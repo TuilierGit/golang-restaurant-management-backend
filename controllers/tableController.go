@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"restaurant-management/database"
@@ -10,10 +9,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 var tableCollection *mongo.Collection = database.OpenCollection(database.Client, "table")
@@ -71,13 +69,12 @@ func CreateTable() gin.HandlerFunc {
 		table.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		table.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
-		table.ID = primitive.NewObjectID()
+		table.ID = bson.NewObjectID()
 		table.Table_id = table.ID.Hex()
 
 		result, insertErr := tableCollection.InsertOne(ctxWithTimeout, table)
 		if insertErr != nil {
-			msg := fmt.Sprintf("Table item was not created")
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Table item was not created"})
 			return
 		}
 		ctx.JSON(http.StatusOK, result)
@@ -96,7 +93,7 @@ func UpdateTable() gin.HandlerFunc {
 			return
 		}
 
-		var updateObj primitive.D
+		var updateObj bson.D
 
 		if table.Number_of_guests != nil {
 			updateObj = append(updateObj, bson.E{
@@ -115,9 +112,7 @@ func UpdateTable() gin.HandlerFunc {
 		table.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
 		upsert := true
-		opt := options.UpdateOptions{
-			Upsert: &upsert,
-		}
+		opt := options.UpdateOne().SetUpsert(upsert)
 
 		filter := bson.M{"table_id": tableID}
 
@@ -127,12 +122,11 @@ func UpdateTable() gin.HandlerFunc {
 			bson.D{
 				{Key: "$set", Value: updateObj},
 			},
-			&opt,
+			opt,
 		)
 
 		if err != nil {
-			msg := fmt.Sprintf("table item update failed")
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "table item update failed"})
 			return
 		}
 

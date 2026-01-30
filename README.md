@@ -30,13 +30,17 @@
 
 ## 💡 Project Overview
 
-This project is a complete Golang backend system for restaurant management. It's my version of the project created by [Akhil Sharma](https://www.youtube.com/@AkhilSharmaTech) with this [video tutorial playlist](https://youtube.com/playlist?list=PL5dTjWUk_cPbjazI1vRuTRZi6o5QlVAAR&si=vPB6STutIOLT570I) on YouTube.
-
-The idea for this project was to improve my Golang skills with interesting topics such as:
+This project is a complete Golang backend system for restaurant management. The idea for this project was to improve my Golang skills with interesting topics such as:
 
 * Creating an API
 * Adding a login system
 * Connecting Golang to a MongoDB database
+
+In the original project (see: Credits), some features have been deprecated. Here are the main changes I made:
+
+* I updated the version of *mongo-driver* used: from 1.17.6 to 2.5.0
+* I added Docker and Docker Compose files to run the application easily
+* I improved the cleanliness of the code by using golangci-lint and fixing all the issues
 
 ## 📚 Prerequisites
 
@@ -85,3 +89,12 @@ sudo docker compose down
 
 > [!CAUTION]
 > If you want to use the project for production, make sure to change the `SECRET_KEY` and use environment variables to store sensitive information like mongodb credentials.
+
+## 📜 Credits
+
+The original idea and code for this project were created by Akhil Sharma. In fact, this project is my own version of his original project with updated dependencies and improved code quality. If you want to see the original project, you can check the repository: [Golang-Restaurant-Management-Akhil-Sharma](https://github.com/AkhilSharma90/golang-restaurant-management-backend).
+
+> [!WARNING]
+> The original project is deprecated and not maintained anymore. My idea was to create a new version of this project with updated dependencies and improved code quality.
+
+If you want to follow the tutorial series, you can check this YouTube playlist : [video tutorial playlist](https://youtube.com/playlist?list=PL5dTjWUk_cPbjazI1vRuTRZi6o5QlVAAR&si=vPB6STutIOLT570I)

@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"restaurant-management/database"
@@ -10,10 +9,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type InvoiceViewFormat struct {
@@ -78,7 +76,7 @@ func GetInvoice() gin.HandlerFunc {
 		}
 
 		invoiceView.Invoice_id = invoice.Invoice_id
-		invoiceView.Payment_status = *&invoice.Payment_status
+		invoiceView.Payment_status = invoice.Payment_status
 		invoiceView.Payment_due = allOrderItems[0]["payment_due"]
 		invoiceView.Table_number = allOrderItems[0]["table_number"]
 		invoiceView.Order_details = allOrderItems[0]["order_items"]
@@ -102,8 +100,7 @@ func CreateInvoice() gin.HandlerFunc {
 
 		err := orderCollection.FindOne(ctxWithTimeout, bson.M{"order_id": invoice.Order_id}).Decode(&order)
 		if err != nil {
-			msg := fmt.Sprintf("error message: order was not found")
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error message: order was not found"})
 			return
 		}
 
@@ -116,7 +113,7 @@ func CreateInvoice() gin.HandlerFunc {
 		invoice.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		invoice.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
-		invoice.ID = primitive.NewObjectID()
+		invoice.ID = bson.NewObjectID()
 		invoice.Invoice_id = invoice.ID.Hex()
 		validationErr := validate.Struct(invoice)
 		if validationErr != nil {
@@ -126,8 +123,7 @@ func CreateInvoice() gin.HandlerFunc {
 
 		result, insertErr := invoiceCollection.InsertOne(ctxWithTimeout, invoice)
 		if insertErr != nil {
-			msg := fmt.Sprintf("invoice was not created")
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invoice was not created"})
 			return
 		}
 
@@ -149,7 +145,7 @@ func UpdateInvoice() gin.HandlerFunc {
 		}
 
 		filter := bson.M{"invoice_id": invoiceID}
-		var updateObj primitive.D
+		var updateObj bson.D
 
 		if invoice.Payment_method != nil {
 			updateObj = append(updateObj, bson.E{
@@ -172,9 +168,7 @@ func UpdateInvoice() gin.HandlerFunc {
 		})
 
 		upsert := true
-		opt := options.UpdateOptions{
-			Upsert: &upsert,
-		}
+		opt := options.UpdateOne().SetUpsert(upsert)
 
 		status := "PENDING"
 		if invoice.Payment_status == nil {
@@ -187,12 +181,11 @@ func UpdateInvoice() gin.HandlerFunc {
 			bson.D{
 				{Key: "&set", Value: updateObj},
 			},
-			&opt,
+			opt,
 		)
 
 		if err != nil {
-			msg := fmt.Sprintf("invoice item update failed")
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invoice item update failed"})
 			return
 		}
 
