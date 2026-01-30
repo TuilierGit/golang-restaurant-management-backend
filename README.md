@@ -15,6 +15,10 @@
         <img alt="MongoDB Logo" src="https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" />
     </a>
     &nbsp;
+    <a href="https://docs.docker.com/compose">
+        <img alt="Docker Compose Logo" src="https://img.shields.io/badge/Docker%20Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+    </a>
+    &nbsp;
     <a href="https://www.jwt.io">
         <img alt="JWT Logo" src="https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=JSON%20web%20tokens&logoColor=white" />
     </a>
@@ -40,6 +44,7 @@ To run this project, you need the following prerequisites:
 
 * Golang (version 1.24 was used for this project)
 * An API testing tool like Postman
+* Docker and Docker Compose (to run MongoDB easily)
 
 ## 📂 Structure
 
@@ -54,8 +59,26 @@ We will describe the different folders of this project:
 
 ## 👩‍💻 Commands
 
+The easiest way to run this project is by using Docker Compose. 
+
+> **_NOTE:_** 
+>If you don't want to use Docker, make sure you have MongoDB installed and running on your machine. Don't forget to update the MongoDB connection string in the `database/databaseConnection.go` file.
+
 To run the application, you need to use the following command:
 
 ```bash
-go run .
+sudo docker compose down
+sudo docker compose up -d
+```
+
+Now, the backend server should be running on `http://localhost:8000`, and the MongoDB database should be running on the default port `27017`.
+You can test the API endpoints using Postman or any other API testing tool (some examples are visible in the Postman collection file: `golang-restaurant-management.postman_collection.json`).
+
+> **_NOTE:_** 
+> Make sure to set up token in Postman for protected routes.
+
+To stop the application, you can use:
+
+```bash
+sudo docker compose down
 ```

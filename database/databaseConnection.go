@@ -11,8 +11,8 @@ import (
 )
 
 func DBinstance() *mongo.Client {
-	MongoDbUrl := "mongodb://localhost:27017"
-	fmt.Print(MongoDbUrl)
+	MongoDbUrl := "mongodb://user:pass@mongodb:27017"
+	// Or "mongodb://localhost:27017"
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(MongoDbUrl))
 	if err != nil {
