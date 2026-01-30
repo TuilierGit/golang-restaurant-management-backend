@@ -28,7 +28,7 @@
     </a>
 </p>
 
-## 💡 Project Overview
+<h2>💡 Project Overview</h2>
 
 This project is a complete Golang backend system for restaurant management. The idea for this project was to improve my Golang skills with interesting topics such as:
 
@@ -42,7 +42,7 @@ In the original project (see: Credits), some features have been deprecated. Here
 * I added Docker and Docker Compose files to run the application easily
 * I improved the cleanliness of the code by using golangci-lint and fixing all the issues
 
-## 📚 Prerequisites
+<h2>📚 Prerequisites</h2>
 
 To run this project, you need the following prerequisites:
 
@@ -50,7 +50,7 @@ To run this project, you need the following prerequisites:
 * An API testing tool like Postman
 * Docker and Docker Compose (to run MongoDB easily)
 
-## 📂 Structure
+<h2>📂 Structure</h2>
 
 We will describe the different folders of this project:
 
@@ -61,7 +61,7 @@ We will describe the different folders of this project:
 * **database**: creates the connection to the MongoDB database
 * **controllers**: handles the business logic of the application and connects routes to models
 
-## 👩‍💻 Commands
+<h2>👩‍💻 Commands</h2>
 
 The easiest way to run this project is by using Docker Compose. 
 
@@ -90,7 +90,7 @@ sudo docker compose down
 > [!CAUTION]
 > If you want to use the project for production, make sure to change the `SECRET_KEY` and use environment variables to store sensitive information like mongodb credentials.
 
-## 📜 Credits
+<h2>📜 Credits</h2>
 
 The original idea and code for this project were created by Akhil Sharma. In fact, this project is my own version of his original project with updated dependencies and improved code quality. If you want to see the original project, you can check the repository: [Golang-Restaurant-Management-Akhil-Sharma](https://github.com/AkhilSharma90/golang-restaurant-management-backend).
 
