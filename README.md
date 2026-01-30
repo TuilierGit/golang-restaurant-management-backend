@@ -61,7 +61,7 @@ We will describe the different folders of this project:
 
 The easiest way to run this project is by using Docker Compose. 
 
-> **_NOTE:_** 
+> [!NOTE]
 >If you don't want to use Docker, make sure you have MongoDB installed and running on your machine. Don't forget to update the MongoDB connection string in the `database/databaseConnection.go` file.
 
 To run the application, you need to use the following command:
@@ -74,7 +74,7 @@ sudo docker compose up -d
 Now, the backend server should be running on `http://localhost:8000`, and the MongoDB database should be running on the default port `27017`.
 You can test the API endpoints using Postman or any other API testing tool (some examples are visible in the Postman collection file: `golang-restaurant-management.postman_collection.json`).
 
-> **_NOTE:_** 
+> [!TIP]
 > Make sure to set up token in Postman for protected routes.
 
 To stop the application, you can use:
@@ -82,3 +82,6 @@ To stop the application, you can use:
 ```bash
 sudo docker compose down
 ```
+
+> [!CAUTION]
+> If you want to use the project for production, make sure to change the `SECRET_KEY` and use environment variables to store sensitive information like mongodb credentials.
